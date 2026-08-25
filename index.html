@@ -213,6 +213,36 @@ textarea{
 textarea:focus{border-color:var(--gold)}
 .note-lab{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 7px}
 
+.finish{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+  margin-top:22px;padding:15px 17px;border:1px solid var(--rule);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(201,162,39,.06),transparent),var(--panel);
+}
+.finish .ftext b{display:block;font-size:14px;font-weight:600}
+.finish .ftext em{display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:2px}
+.finish .fbtns{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+.finish .frow{display:flex;flex-wrap:wrap;gap:9px}
+button.danger{color:#E38C79;border-color:rgba(224,101,75,.4)}
+button.danger:hover{border-color:var(--m);color:var(--m);background:rgba(224,101,75,.08)}
+button.danger.solid{background:var(--m);border-color:var(--m);color:#2A0B04}
+button.danger.solid:hover{background:#EC7259;color:#2A0B04}
+
+.modal{
+  position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(6,10,18,.72);
+}
+.modal[hidden]{display:none}
+.modal .sheet{
+  width:100%;max-width:420px;background:var(--panel);border:1px solid var(--rule);
+  border-radius:10px;padding:20px 21px 17px;box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.modal h3{margin:0 0 7px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.modal p{margin:0 0 8px;font-size:13.5px;color:var(--muted)}
+.modal ul{margin:0 0 11px;padding-left:18px;font-size:13px;color:var(--paper);line-height:1.65}
+.modal ul li::marker{color:var(--m)}
+.modal .tip{font-size:12px;color:var(--gold);margin-bottom:15px}
+.modal .mbtns{display:flex;flex-wrap:wrap;gap:9px;justify-content:flex-end}
+
 details.ref{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);margin-top:14px}
 details.ref summary{cursor:pointer;padding:13px 16px;font-size:12px;font-weight:600;
   letter-spacing:.16em;text-transform:uppercase;list-style:none}
@@ -286,6 +316,17 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     background-position:calc(100% - 12px) 51%,calc(100% - 8px) 51%;
   }
 
+  .finish{padding:13px 14px;gap:11px;margin-top:18px}
+  .finish .ftext b{font-size:13px}
+  .finish .ftext em{font-size:10.5px}
+  .finish .fbtns{width:100%;align-items:stretch}
+  .finish .frow{width:100%}
+  .finish .frow button{flex:1}
+  .modal .sheet{padding:17px 16px 14px}
+  .modal h3{font-size:15.5px}
+  .modal p{font-size:12.5px}
+  .modal ul{font-size:12px}
+  .modal .mbtns button{flex:1}
   .charts{gap:8px}
   .drop{padding:9px 12px;gap:9px;width:100%}
   .drop .dl b{font-size:12px}
@@ -313,7 +354,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
 @media print{
   @page{size:A4;margin:11mm}
   body{background:#fff;color:#000;font-size:11px}
-  .bar,.rail,.charts,.tape-marker,.clr,.toast,.legend .seq{display:none!important}
+  .bar,.rail,.charts,.finish,.modal,.tape-marker,.clr,.toast,.legend .seq{display:none!important}
   .print-head{
     display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
     padding-bottom:7px;margin-bottom:12px;border-bottom:2px solid #111;
@@ -422,6 +463,20 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     <div><p class="note-lab">Review — was the sequence correct?</p><textarea id="nReview" placeholder="Did the phases play out in order? What did you misread?"></textarea></div>
   </div>
 
+  <div class="finish">
+    <div class="ftext">
+      <b>Done for the day?</b>
+      <em>Exports this sheet plus any attached charts as one PDF you can drop in the group.</em>
+    </div>
+    <div class="fbtns">
+      <button id="bReset2" class="danger">Clear notes</button>
+      <div class="frow">
+        <button id="bPrint2" class="solid">Download PDF</button>
+        <button id="bCopy2">Copy summary</button>
+      </div>
+    </div>
+  </div>
+
   <details class="ref">
     <summary>True Opens reference</summary>
     <div class="ref-body">
@@ -442,6 +497,19 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   </details>
 
   <footer>QuantumPipz · Quarterly Theory Checklist · All times SGT (GMT+8)</footer>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle" aria-describedby="mBody" hidden>
+  <div class="sheet">
+    <h3 id="mTitle">Clear this sheet?</h3>
+    <p id="mBody">This cannot be undone:</p>
+    <ul id="mList"></ul>
+    <p class="tip" id="mTip"></p>
+    <div class="mbtns">
+      <button id="mNo">No, keep it</button>
+      <button id="mYes" class="danger solid">Yes, clear</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1148,7 +1216,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     return 'QuarterlyTheory_' + pair + '_' + d + '.pdf';
   }
 
-  document.getElementById('bPrint').addEventListener('click', function(){
+  function downloadPDF(){
     try {
       var url = URL.createObjectURL(buildSheet());
       var a = document.createElement('a');
@@ -1159,20 +1227,92 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     } catch (e){
       toast('Could not build the PDF');
     }
+  }
+  ['bPrint','bPrint2'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', downloadPDF);
   });
 
-  document.getElementById('bReset').addEventListener('click', function(){
-    if (!window.confirm('Clear every phase and note on this sheet?')) return;
-    state = { patterns:{}, notes:{} };
-    save();
-    GROUPS.forEach(function(g){ renderGroup(g.id); });
-    renderTape();
-    fields.forEach(function(id){ document.getElementById(id).value = ''; });
-    charts.length = 0; renderThumbs();
-    toast('Sheet cleared');
+  var modal = document.getElementById('modal');
+  var lastFocus = null;
+
+  var NOTE_FIELDS = ['nBias','nPlan','nTrades','nReview'];
+  var MODES = {
+    all: {
+      title: 'Clear this sheet?',
+      body:  'This wipes everything on the page and cannot be undone:',
+      list:  ['Every phase you\'ve selected, at all timeframes',
+              'All four plan &amp; review boxes',
+              'Any chart screenshots you\'ve attached'],
+      tip:   'Download the PDF first if you want to keep a copy.',
+      yes:   'Yes, clear all',
+      done:  'Sheet cleared'
+    },
+    notes: {
+      title: 'Clear your written notes?',
+      body:  'This clears only the text you typed into these boxes:',
+      list:  ['Bias &amp; draw on liquidity',
+              'Which quarter am I hunting',
+              'Trades taken',
+              'Review - was the sequence correct?'],
+      tip:   'Your selected phases and attached charts are left untouched.',
+      yes:   'Yes, clear notes',
+      done:  'Notes cleared'
+    }
+  };
+  var mode = 'all';
+
+  function askClear(which){
+    mode = which;
+    var m = MODES[which];
+    setTxt('mTitle', m.title);
+    setTxt('mBody', m.body);
+    document.getElementById('mList').innerHTML =
+      m.list.map(function(li){ return '<li>' + li + '</li>'; }).join('');
+    setTxt('mTip', m.tip);
+    setTxt('mYes', m.yes);
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    document.getElementById('mNo').focus();
+  }
+  function closeModal(){
+    modal.hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function doClear(){
+    if (mode === 'all'){
+      state = { patterns:{}, notes:{} };
+      save();
+      GROUPS.forEach(function(g){ renderGroup(g.id); });
+      renderTape();
+      fields.forEach(function(id){ document.getElementById(id).value = ''; });
+      charts.length = 0; renderThumbs();
+      closeModal();
+      window.scrollTo({top:0, behavior:'smooth'});
+    } else {
+      NOTE_FIELDS.forEach(function(id){
+        document.getElementById(id).value = '';
+        delete state.notes[id];
+      });
+      save();
+      closeModal();
+    }
+    toast(MODES[mode].done);
+  }
+
+  var bTop = document.getElementById('bReset');
+  if (bTop) bTop.addEventListener('click', function(){ askClear('all'); });
+  var bBot = document.getElementById('bReset2');
+  if (bBot) bBot.addEventListener('click', function(){ askClear('notes'); });
+  document.getElementById('mNo').addEventListener('click', closeModal);
+  document.getElementById('mYes').addEventListener('click', doClear);
+  modal.addEventListener('click', function(e){ if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function(e){
+    if (modal.hidden) return;
+    if (e.key === 'Escape'){ e.preventDefault(); closeModal(); }
   });
 
-  document.getElementById('bCopy').addEventListener('click', function(){
+  function copySummary(){
     var lines = ['QUARTERLY THEORY — ' + (state.notes.fDate || '') + ' ' + (state.notes.fPair || '')];
     GROUPS.forEach(function(g){
       var seq = seqOf(state.patterns[g.id]);
@@ -1195,6 +1335,10 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     if (navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){ toast('Summary copied'); }, fallback);
     } else fallback();
+  }
+  ['bCopy','bCopy2'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', copySummary);
   });
 
 })();
