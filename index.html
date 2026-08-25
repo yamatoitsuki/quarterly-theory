@@ -126,6 +126,28 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 button.solid{background:var(--gold);border-color:var(--gold);color:#161006}
 button.solid:hover{background:#DDB63A;color:#161006}
 
+/* ---------- chart attachments ---------- */
+.charts{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin:-4px 0 4px}
+.drop{
+  display:flex;align-items:center;gap:11px;cursor:pointer;
+  border:1px dashed var(--rule);border-radius:var(--r);padding:10px 15px;background:var(--panel);
+  transition:border-color .15s,background .15s;
+}
+.drop:hover,.drop.over{border-color:var(--gold);background:var(--panel-2)}
+.drop:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.drop .plus{font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--gold);line-height:1}
+.drop .dl b{display:block;font-size:12.5px;font-weight:600}
+.drop .dl em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-top:1px}
+
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumb{position:relative;width:96px;border:1px solid var(--rule);border-radius:var(--r);
+  overflow:hidden;background:#0E1728}
+.thumb img{display:block;width:100%;height:62px;object-fit:cover}
+.thumb .cap{display:flex;justify-content:space-between;align-items:center;gap:4px;
+  padding:3px 5px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.thumb .kill{background:none;border:0;padding:0 2px;color:var(--muted);font-size:13px;line-height:1;cursor:pointer}
+.thumb .kill:hover{color:var(--m);border:0}
+
 /* ---------- groups ---------- */
 .section-label{
   font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);
@@ -151,7 +173,7 @@ button.solid:hover{background:#DDB63A;color:#161006}
 .row{display:grid;grid-template-columns:34px minmax(0,1fr) 184px;align-items:center;gap:10px;
   padding:9px 14px;border-top:1px solid rgba(34,48,74,.6)}
 .row:first-of-type{border-top:0}
-.row.now{background:rgba(201,162,39,.07)}
+.row.now{background:rgba(201,162,39,.09);box-shadow:inset 3px 0 0 var(--gold),0 3px 12px rgba(0,0,0,.38);position:relative;z-index:1}
 .q{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.06em}
 .row.now .q::after{content:'●';margin-left:4px;font-size:8px;vertical-align:middle}
 .lab{min-width:0}
@@ -264,6 +286,12 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     background-position:calc(100% - 12px) 51%,calc(100% - 8px) 51%;
   }
 
+  .charts{gap:8px}
+  .drop{padding:9px 12px;gap:9px;width:100%}
+  .drop .dl b{font-size:12px}
+  .drop .dl em{font-size:9.5px}
+  .thumb{width:82px}
+  .thumb img{height:54px}
   .note-lab{font-size:9px;letter-spacing:.16em}
   textarea{font-size:13px;min-height:96px;padding:10px 11px}
   details.ref summary{font-size:10.5px;padding:11px 13px;letter-spacing:.12em}
@@ -285,7 +313,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
 @media print{
   @page{size:A4;margin:11mm}
   body{background:#fff;color:#000;font-size:11px}
-  .bar,.rail,.tape-marker,.clr,.toast,.legend .seq{display:none!important}
+  .bar,.rail,.charts,.tape-marker,.clr,.toast,.legend .seq{display:none!important}
   .print-head{
     display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
     padding-bottom:7px;margin-bottom:12px;border-bottom:2px solid #111;
@@ -366,6 +394,18 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     <button id="bPrint">Download PDF</button>
     <button id="bCopy">Copy summary</button>
     <button id="bReset" class="solid">Clear all</button>
+  </div>
+
+  <div class="charts">
+    <label class="drop" id="chartDrop" tabindex="0">
+      <input type="file" id="chartInput" accept="image/*" multiple hidden>
+      <span class="plus">+</span>
+      <span class="dl">
+        <b>Attach chart screenshot</b>
+        <em>Click, drag in, or paste &mdash; each chart gets its own page in the PDF</em>
+      </span>
+    </label>
+    <div class="thumbs" id="thumbs"></div>
   </div>
 
   <div class="section-label">Higher timeframe</div>
@@ -702,18 +742,16 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   var HELB = '278 333 474 556 556 889 722 238 333 333 389 584 278 333 278 278 556 556 556 556 556 556 556 556 556 556 333 333 584 584 584 611 975 722 722 722 722 667 611 778 722 278 556 722 611 833 722 778 667 778 722 667 611 722 667 944 667 667 611 333 278 333 584 556 333 556 611 556 611 556 333 611 611 278 278 556 278 889 611 611 611 611 389 556 333 611 556 778 556 556 500 389 280 389 584'.split(' ').map(Number);
 
   function PDFSheet(){
-    var MM = 2.8346457;                 // mm -> points
-    var PH = 841.89;                    // A4 height in points
-    var ops = [];
-    var cf = null, cs = null, clw = null;
+    var MM = 2.8346457;
+    var pages = [], cur = null;
 
     function n(v){ return Math.round(v * 100) / 100; }
     function X(mm){ return n(mm * MM); }
-    function Y(mm){ return n(PH - mm * MM); }     // y measured from the top
+    function Y(mm){ return n(cur.h * MM - mm * MM); }   // y measured from the top of the page
     function col(c){ return n(c[0]/255) + ' ' + n(c[1]/255) + ' ' + n(c[2]/255); }
-    function setFill(c){ var k = col(c); if (k !== cf){ ops.push(k + ' rg'); cf = k; } }
-    function setStroke(c){ var k = col(c); if (k !== cs){ ops.push(k + ' RG'); cs = k; } }
-    function setLW(v){ if (v !== clw){ ops.push(n(v * MM) + ' w'); clw = v; } }
+    function setFill(c){ var k = col(c); if (k !== cur.cf){ cur.ops.push(k + ' rg'); cur.cf = k; } }
+    function setStroke(c){ var k = col(c); if (k !== cur.cs){ cur.ops.push(k + ' RG'); cur.cs = k; } }
+    function setLW(v){ if (v !== cur.clw){ cur.ops.push(n(v * MM) + ' w'); cur.clw = v; } }
     function esc(t){
       return String(t).replace(/[^\x20-\x7E]/g, function(ch){
         return ({'\u2013':'-','\u2014':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"',
@@ -722,6 +760,11 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     }
 
     var api = {
+      page: function(w, h){
+        cur = {w:w, h:h, ops:[], imgs:[], cf:null, cs:null, clw:null};
+        pages.push(cur);
+        return api;
+      },
       width: function(t, o){
         o = o || {};
         var tb = o.bold ? HELB : HELV, sz = o.size || 10, cspc = o.charSpace || 0, w = 0;
@@ -729,7 +772,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
           var i = ch.charCodeAt(0) - 32;
           w += ((i >= 0 && i < tb.length) ? tb[i] : 500) / 1000 * sz + cspc;
         });
-        return w / MM;                                   // returned in mm
+        return w / MM;
       },
       rect: function(x, y, w, h, o){
         o = o || {};
@@ -737,17 +780,17 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
         if (o.fill){ setFill(o.fill); mode += 'f'; }
         if (o.stroke){ setStroke(o.stroke); setLW(o.lw || 0.25); mode = o.fill ? 'B' : 'S'; }
         if (!mode) return;
-        ops.push(X(x) + ' ' + Y(y + h) + ' ' + n(w * MM) + ' ' + n(h * MM) + ' re ' + mode);
+        cur.ops.push(X(x) + ' ' + Y(y + h) + ' ' + n(w * MM) + ' ' + n(h * MM) + ' re ' + mode);
       },
       circle: function(cx, cy, r, o){
         setFill(o.fill);
         var k = 0.5523 * r, x = cx, y = cy;
         function pt(a, b){ return X(a) + ' ' + Y(b); }
-        ops.push(pt(x - r, y) + ' m');
-        ops.push(pt(x - r, y - k) + ' ' + pt(x - k, y - r) + ' ' + pt(x, y - r) + ' c');
-        ops.push(pt(x + k, y - r) + ' ' + pt(x + r, y - k) + ' ' + pt(x + r, y) + ' c');
-        ops.push(pt(x + r, y + k) + ' ' + pt(x + k, y + r) + ' ' + pt(x, y + r) + ' c');
-        ops.push(pt(x - k, y + r) + ' ' + pt(x - r, y + k) + ' ' + pt(x - r, y) + ' c f');
+        cur.ops.push(pt(x - r, y) + ' m');
+        cur.ops.push(pt(x - r, y - k) + ' ' + pt(x - k, y - r) + ' ' + pt(x, y - r) + ' c');
+        cur.ops.push(pt(x + k, y - r) + ' ' + pt(x + r, y - k) + ' ' + pt(x + r, y) + ' c');
+        cur.ops.push(pt(x + r, y + k) + ' ' + pt(x + k, y + r) + ' ' + pt(x, y + r) + ' c');
+        cur.ops.push(pt(x - k, y + r) + ' ' + pt(x - r, y + k) + ' ' + pt(x - r, y) + ' c f');
       },
       text: function(t, x, y, o){
         o = o || {};
@@ -756,9 +799,9 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
         if (o.align === 'right') x -= w;
         else if (o.align === 'center') x -= w / 2;
         setFill(o.color || [0,0,0]);
-        ops.push('BT /' + (o.bold ? 'F2' : 'F1') + ' ' + n(sz) + ' Tf ' +
-                 (cspc ? n(cspc) + ' Tc ' : '0 Tc ') +
-                 '1 0 0 1 ' + X(x) + ' ' + Y(y) + ' Tm (' + esc(t) + ') Tj ET');
+        cur.ops.push('BT /' + (o.bold ? 'F2' : 'F1') + ' ' + n(sz) + ' Tf ' +
+                     (cspc ? n(cspc) + ' Tc ' : '0 Tc ') +
+                     '1 0 0 1 ' + X(x) + ' ' + Y(y) + ' Tm (' + esc(t) + ') Tj ET');
       },
       wrap: function(t, maxW, o){
         var words = String(t).split(/\s+/), lines = [], line = '';
@@ -770,29 +813,60 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
         if (line) lines.push(line);
         return lines;
       },
+      /* jpeg = binary string of a baseline JPEG; drawn into the box at x,y,w,h (mm) */
+      image: function(jpeg, pxW, pxH, x, y, w, h){
+        cur.imgs.push({data:jpeg, w:pxW, h:pxH});
+        cur.ops.push('q ' + n(w * MM) + ' 0 0 ' + n(h * MM) + ' ' +
+                     X(x) + ' ' + Y(y + h) + ' cm /Im' + cur.imgs.length + ' Do Q');
+      },
       blob: function(){
-        var content = ops.join('\n');
-        var objs = [
-          '<< /Type /Catalog /Pages 2 0 R >>',
-          '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-          '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
-            '/Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
-          '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream',
-          '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
-          '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
-        ];
-        var out = '%PDF-1.4\n', offs = [];
-        objs.forEach(function(o, i){
-          offs.push(out.length);
-          out += (i + 1) + ' 0 obj\n' + o + '\nendobj\n';
+        /* pass 1 - hand out object ids */
+        var id = 3, plan = [];
+        pages.forEach(function(pg){
+          var e = {pg:pg, pageId:id++, contId:id++, imgIds:[]};
+          pg.imgs.forEach(function(){ e.imgIds.push(id++); });
+          plan.push(e);
         });
+        var f1 = id++, f2 = id++, total = id - 1;
+
+        /* pass 2 - bodies, in id order */
+        var objs = [];
+        objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+        objs[2] = '<< /Type /Pages /Kids [' +
+                  plan.map(function(e){ return e.pageId + ' 0 R'; }).join(' ') +
+                  '] /Count ' + plan.length + ' >>';
+
+        plan.forEach(function(e){
+          var xo = e.imgIds.map(function(iid, k){ return '/Im' + (k+1) + ' ' + iid + ' 0 R'; }).join(' ');
+          objs[e.pageId] =
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' +
+            n(e.pg.w * MM) + ' ' + n(e.pg.h * MM) + '] /Resources << /Font << /F1 ' + f1 +
+            ' 0 R /F2 ' + f2 + ' 0 R >>' + (xo ? ' /XObject << ' + xo + ' >>' : '') +
+            ' >> /Contents ' + e.contId + ' 0 R >>';
+          var content = e.pg.ops.join('\n');
+          objs[e.contId] = '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream';
+          e.pg.imgs.forEach(function(im, k){
+            objs[e.imgIds[k]] =
+              '<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h +
+              ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' +
+              im.data.length + ' >>\nstream\n' + im.data + '\nendstream';
+          });
+        });
+        objs[f1] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+        objs[f2] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+
+        var out = '%PDF-1.4\n', offs = [];
+        for (var i = 1; i <= total; i++){
+          offs.push(out.length);
+          out += i + ' 0 obj\n' + objs[i] + '\nendobj\n';
+        }
         var xref = out.length;
-        out += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+        out += 'xref\n0 ' + (total + 1) + '\n0000000000 65535 f \n';
         offs.forEach(function(o){ out += String(o).padStart(10, '0') + ' 00000 n \n'; });
-        out += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+        out += 'trailer\n<< /Size ' + (total + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
 
         var bytes = new Uint8Array(out.length);
-        for (var i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xFF;
+        for (var j = 0; j < out.length; j++) bytes[j] = out.charCodeAt(j) & 0xFF;
         return new Blob([bytes], {type:'application/pdf'});
       }
     };
@@ -802,7 +876,8 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   var RGB = {
     A:[76,143,209], M:[224,101,75], D:[169,124,214], X:[63,191,127],
     ink:[15,27,45], gold:[154,123,47], mute:[110,120,138],
-    rule:[201,206,215], wash:[240,242,246], empty:[228,231,237], near:[252,252,253]
+    rule:[201,206,215], wash:[240,242,246], empty:[228,231,237], near:[252,252,253],
+    live:[253,247,231], liveEdge:[201,162,39], shadow:[214,218,226], shadow2:[231,234,240]
   };
 
   function niceDate(){
@@ -813,21 +888,41 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   }
 
   function buildSheet(){
-    var P = PDFSheet();
+    var P = PDFSheet().page(210, 297);
     var M = 12, W = 210 - M*2, COL = (W - 6) / 2;
+
+    /* which quarter is running at the moment of export */
+    var sg = sgtNow();
+    var into = ((((sg.h*3600 + sg.m*60 + sg.s) - 21600) % 86400) + 86400) % 86400;
+    var liveIdx = Math.floor(into / 5400);
+    var liveSess = Math.floor(liveIdx / 4), liveQ = liveIdx % 4;
+    var liveWeek = Math.min(3, Math.floor((sg.date - 1) / 7));
+    var liveDay = WEEK_DAYS.indexOf(sg.day);
 
     /* header */
     P.text('QUANTUMPIPZ   DAILY TRADER WORKSHEET', M, M + 3, {size:7, bold:true, color:RGB.gold, charSpace:0.6});
     P.text('Quarterly Theory Checklist', M, M + 11.5, {size:17, bold:true, color:RGB.ink});
-    P.text((state.notes.fPair || 'XAUUSD').toUpperCase(), 210 - M, M + 5,  {size:10, bold:true, color:RGB.ink, align:'right'});
-    P.text(niceDate(), 210 - M, M + 10.5, {size:8.5, color:RGB.mute, align:'right'});
-    P.rect(M, M + 14, W, 0.6, {fill:RGB.ink});
+    P.text((state.notes.fPair || 'XAUUSD').toUpperCase(), 210 - M, M + 4.5, {size:10, bold:true, color:RGB.ink, align:'right'});
+    P.text(niceDate(), 210 - M, M + 9.5, {size:8.5, color:RGB.mute, align:'right'});
+    P.text('Generated ' + pad(sg.h) + ':' + pad(sg.m) + ':' + pad(sg.s) + ' SGT', 210 - M, M + 14,
+           {size:7, color:RGB.mute, align:'right'});
+
+    /* the quarter that was live at the moment of export */
+    P.text('LIVE AT EXPORT   ' + SESSIONS[liveSess] + ' Q' + (liveQ + 1) + '  ' +
+           MICRO_RANGES[liveSess][liveQ].replace(' – ', '-') + '   ' +
+           'WEEK ' + (liveWeek + 1) + '   ' + (liveDay > -1 ? WEEK_DAYS[liveDay].toUpperCase() : sg.day.toUpperCase()),
+           M, M + 15.5, {size:6.2, bold:true, color:RGB.gold, charSpace:0.4});
+    P.rect(M, M + 17.5, W, 0.6, {fill:RGB.ink});
 
     /* day tape */
-    var ty = M + 18, th = 5, seg = (W - 15 * 0.8) / 16;
+    var ty = M + 21.5, th = 5, seg = (W - 15 * 0.8) / 16;
+    var liveCell = liveSess * 4 + liveQ;
     for (var i = 0; i < 16; i++){
       var sq = seqOf(state.patterns['micro' + Math.floor(i / 4)]);
-      P.rect(M + i * (seg + 0.8), ty, seg, th, {fill: sq ? RGB[sq[i % 4]] : RGB.empty});
+      var tx = M + i * (seg + 0.8);
+      if (i === liveCell) P.rect(tx + 0.5, ty + 0.5, seg, th, {fill:RGB.shadow});
+      P.rect(tx, ty, seg, th, {fill: sq ? RGB[sq[i % 4]] : RGB.empty,
+                               stroke: i === liveCell ? RGB.liveEdge : null, lw:0.5});
     }
     ['ASIAN','LONDON','NY AM','NY PM'].forEach(function(nm, k){
       P.text(nm, M + (k + 0.5) * (W / 4), ty + th + 3, {size:5.6, bold:true, color:RGB.mute, align:'center', charSpace:0.5});
@@ -843,10 +938,11 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     });
     P.text('X-A-M-D   or   A-M-D-X', 210 - M, ly, {size:7.5, color:RGB.mute, align:'right'});
 
-    /* one quarter block */
-    function block(x, y, w, title, sub, gid, rows){
+    /* one quarter block. `live` = index of the quarter running right now, or -1 */
+    function block(x, y, w, title, sub, gid, rows, live){
       var seq = seqOf(state.patterns[gid]);
       var hh = 6.4, rh = 6.8;
+      if (live === undefined) live = -1;
 
       P.rect(x, y, w, hh, {fill:RGB.wash, stroke:RGB.rule, lw:0.25});
       P.rect(x, y, 1.1, hh, {fill:RGB.gold});
@@ -857,23 +953,39 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
              {size:7, bold:true, color: seq ? RGB.gold : RGB.rule, align:'right', charSpace:0.7});
 
       var chipW = Math.min(42, w * 0.45);
-      rows.forEach(function(r, qi){
-        var ry = y + hh + qi * rh;
-        P.rect(x, ry, w, rh, {stroke:RGB.rule, lw:0.2});
-        P.text('Q' + (qi + 1), x + 2.4, ry + 4.3, {size:6.4, bold:true, color:RGB.gold});
-        P.text(r[0], x + 8, ry + (r[1] ? 3.4 : 4.4), {size:8, bold:true, color:RGB.ink});
-        if (r[1]) P.text(r[1].replace(' – ', ' - '), x + 8, ry + 5.8, {size:6, color:RGB.mute});
+
+      function drawRow(qi, hot){
+        var r = rows[qi], ry = y + hh + qi * rh;
+
+        if (hot){
+          /* soft drop shadow, then the lifted row */
+          P.rect(x + 1.1, ry + 1.1, w, rh, {fill:RGB.shadow2});
+          P.rect(x + 0.6, ry + 0.6, w, rh, {fill:RGB.shadow});
+          P.rect(x, ry, w, rh, {fill:RGB.live, stroke:RGB.liveEdge, lw:0.45});
+          P.rect(x, ry, 1.3, rh, {fill:RGB.liveEdge});
+        } else {
+          P.rect(x, ry, w, rh, {stroke:RGB.rule, lw:0.2});
+        }
+
+        P.text('Q' + (qi + 1), x + (hot ? 3.2 : 2.4), ry + 4.3, {size:6.4, bold:true, color:RGB.gold});
+        P.text(r[0], x + (hot ? 8.8 : 8), ry + (r[1] ? 3.4 : 4.4), {size:8, bold:true, color:RGB.ink});
+        if (r[1]) P.text(r[1].replace(' – ', ' - '), x + (hot ? 8.8 : 8), ry + 5.8, {size:6, color:RGB.mute});
 
         var cx = x + w - chipW - 1.2, cy = ry + 1.1, ch = rh - 2.2;
         if (seq){
           var ph = seq[qi];
-          P.rect(cx, cy, chipW, ch, {fill:RGB.near, stroke:RGB.rule, lw:0.2});
+          P.rect(cx, cy, chipW, ch, {fill:RGB.near, stroke: hot ? RGB.liveEdge : RGB.rule, lw: hot ? 0.35 : 0.2});
           P.rect(cx, cy, 1.3, ch, {fill:RGB[ph]});
           P.text(ph + '  ' + NAME[ph], cx + 3.4, cy + ch / 2 + 1.3, {size:7.4, bold:true, color:RGB.ink});
         } else {
-          P.rect(cx, cy, chipW, ch, {stroke:RGB.rule, lw:0.2});
+          P.rect(cx, cy, chipW, ch, {stroke: hot ? RGB.liveEdge : RGB.rule, lw: hot ? 0.35 : 0.2});
         }
-      });
+        if (hot) P.text('NOW', x + w - chipW - 4.6, ry + 4.3,
+                        {size:5.4, bold:true, color:RGB.liveEdge, align:'right', charSpace:0.4});
+      }
+
+      rows.forEach(function(_, qi){ if (qi !== live) drawRow(qi, false); });
+      if (live > -1) drawRow(live, true);          /* drawn last so the shadow sits on top */
       return y + hh + rows.length * rh;
     }
 
@@ -884,15 +996,17 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     }
 
     var y = heading('Higher timeframe', ly + 6);
-    var yA = block(M, y, COL, 'Monthly', '', 'monthly', GROUPS[0].rows);
-    var yB = block(M + COL + 6, y, COL, 'Weekly', '', 'weekly', GROUPS[1].rows);
+    var yA = block(M, y, COL, 'Monthly', '', 'monthly', GROUPS[0].rows, liveWeek);
+    var yB = block(M + COL + 6, y, COL, 'Weekly', '', 'weekly', GROUPS[1].rows, liveDay);
     y = Math.max(yA, yB) + 4;
-    y = block(M, y, W, 'Daily', 'Sessions', 'daily', GROUPS[2].rows) + 7;
+    y = block(M, y, W, 'Daily', 'Sessions', 'daily', GROUPS[2].rows, liveSess) + 7;
 
     y = heading('Micro sessions', y);
     for (var row = 0; row < 2; row++){
-      var l = block(M, y, COL, SESSIONS[row*2], 'Daily Q' + (row*2+1), 'micro'+(row*2), GROUPS[3+row*2].rows);
-      var r = block(M + COL + 6, y, COL, SESSIONS[row*2+1], 'Daily Q' + (row*2+2), 'micro'+(row*2+1), GROUPS[4+row*2].rows);
+      var l = block(M, y, COL, SESSIONS[row*2], 'Daily Q' + (row*2+1), 'micro'+(row*2),
+                    GROUPS[3+row*2].rows, liveSess === row*2 ? liveQ : -1);
+      var r = block(M + COL + 6, y, COL, SESSIONS[row*2+1], 'Daily Q' + (row*2+2), 'micro'+(row*2+1),
+                    GROUPS[4+row*2].rows, liveSess === row*2+1 ? liveQ : -1);
       y = Math.max(l, r) + 4;
     }
 
@@ -919,8 +1033,113 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     P.rect(M, 287, W, 0.2, {fill:RGB.rule});
     P.text('QUANTUMPIPZ   QUARTERLY THEORY CHECKLIST   ALL TIMES SGT (GMT+8)', M, 290.5,
            {size:6, color:RGB.mute, charSpace:0.4});
+
+    /* ---- one page per attached chart, orientation follows the image ---- */
+    charts.forEach(function(ch, i){
+      var landscape = ch.w > ch.h;
+      var pw = landscape ? 297 : 210, ph = landscape ? 210 : 297;
+      P.page(pw, ph);
+
+      var m = 10;
+      P.text('QUANTUMPIPZ   ' + (state.notes.fPair || 'XAUUSD').toUpperCase() +
+             '   ' + niceDate(), m, m + 2.5, {size:6.4, bold:true, color:RGB.gold, charSpace:0.5});
+      P.text('CHART ' + (i + 1) + ' OF ' + charts.length, pw - m, m + 2.5,
+             {size:6.4, bold:true, color:RGB.mute, align:'right', charSpace:0.5});
+      P.rect(m, m + 4.2, pw - m*2, 0.4, {fill:RGB.ink});
+
+      var top = m + 8, bottom = ph - m - 6;
+      var availW = pw - m*2, availH = bottom - top;
+      var scale = Math.min(availW / ch.w, availH / ch.h);
+      var iw = ch.w * scale, ih = ch.h * scale;
+      var ix = m + (availW - iw) / 2, iy = top + (availH - ih) / 2;
+
+      P.rect(ix - 0.4, iy - 0.4, iw + 0.8, ih + 0.8, {stroke:RGB.rule, lw:0.3});
+      P.image(ch.bin, ch.w, ch.h, ix, iy, iw, ih);
+
+      P.text('QUANTUMPIPZ   QUARTERLY THEORY CHECKLIST   ALL TIMES SGT (GMT+8)',
+             m, ph - m + 1, {size:6, color:RGB.mute, charSpace:0.4});
+    });
+
     return P.blob();
   }
+
+  /* ---------- chart attachments ----------
+     Screenshots are downscaled and re-encoded to JPEG so the PDF stays small.
+     They live in memory for the session only, never in browser storage.       */
+  var charts = [];
+  var MAX_CHARTS = 4, MAX_EDGE = 1800;
+
+  function addChart(file){
+    if (charts.length >= MAX_CHARTS){ toast('Up to ' + MAX_CHARTS + ' charts'); return; }
+    if (!file || !/^image\//.test(file.type)){ toast('Images only'); return; }
+
+    var fr = new FileReader();
+    fr.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+        var w = Math.max(1, Math.round(img.width * scale));
+        var h = Math.max(1, Math.round(img.height * scale));
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        var cx = cv.getContext('2d');
+        cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h);      // flatten any transparency
+        cx.drawImage(img, 0, 0, w, h);
+        var url = cv.toDataURL('image/jpeg', 0.85);
+        charts.push({ w:w, h:h, thumb:url, bin:atob(url.split(',')[1]) });
+        renderThumbs();
+        toast((w > h ? 'Landscape' : 'Portrait') + ' chart added');
+      };
+      img.onerror = function(){ toast('Could not read that image'); };
+      img.src = fr.result;
+    };
+    fr.onerror = function(){ toast('Could not read that file'); };
+    fr.readAsDataURL(file);
+  }
+
+  function renderThumbs(){
+    var box = document.getElementById('thumbs');
+    box.innerHTML = '';
+    charts.forEach(function(ch, i){
+      var d = document.createElement('div');
+      d.className = 'thumb';
+      var im = document.createElement('img'); im.src = ch.thumb; im.alt = 'Chart ' + (i+1);
+      var cap = document.createElement('div'); cap.className = 'cap';
+      var lab = document.createElement('span'); lab.textContent = ch.w > ch.h ? 'Landscape' : 'Portrait';
+      var kill = document.createElement('button');
+      kill.className = 'kill'; kill.type = 'button'; kill.textContent = '\u00d7';
+      kill.setAttribute('aria-label', 'Remove chart ' + (i+1));
+      kill.addEventListener('click', function(){ charts.splice(i, 1); renderThumbs(); });
+      cap.appendChild(lab); cap.appendChild(kill);
+      d.appendChild(im); d.appendChild(cap);
+      box.appendChild(d);
+    });
+  }
+
+  var drop = document.getElementById('chartDrop');
+  var chartInput = document.getElementById('chartInput');
+  chartInput.addEventListener('change', function(){
+    Array.prototype.forEach.call(this.files, addChart);
+    this.value = '';
+  });
+  drop.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); chartInput.click(); }
+  });
+  ['dragenter','dragover'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function(e){
+    Array.prototype.forEach.call(e.dataTransfer.files, addChart);
+  });
+  document.addEventListener('paste', function(e){
+    var items = (e.clipboardData || {}).items || [];
+    Array.prototype.forEach.call(items, function(it){
+      if (it.kind === 'file' && /^image\//.test(it.type)) addChart(it.getAsFile());
+    });
+  });
 
   function fileName(){
     var pair = (state.notes.fPair || 'XAUUSD').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -949,6 +1168,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     GROUPS.forEach(function(g){ renderGroup(g.id); });
     renderTape();
     fields.forEach(function(id){ document.getElementById(id).value = ''; });
+    charts.length = 0; renderThumbs();
     toast('Sheet cleared');
   });
 
