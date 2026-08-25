@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quarterly Theory Checklist — QuantumPipz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0B1220;
+  --panel:#121C2E;
+  --panel-2:#16223A;
+  --rule:#22304A;
+  --paper:#E7ECF4;
+  --muted:#7C8AA3;
+  --gold:#C9A227;
+
+  --a:#4C8FD1;   /* Accumulation */
+  --m:#E0654B;   /* Manipulation */
+  --d:#A97CD6;   /* Distribution */
+  --x:#3FBF7F;   /* Expansion   */
+
+  --r:6px;
+  --pad:clamp(14px,3vw,26px);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 500px at 78% -12%, rgba(201,162,39,.10), transparent 60%),
+    var(--ink);
+  color:var(--paper);
+  font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:var(--pad) var(--pad) 64px}
+
+/* ---------- header ---------- */
+.masthead{
+  display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;
+  padding-bottom:16px;border-bottom:1px solid var(--rule);
+}
+.brand{
+  font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;
+}
+h1{
+  font-size:clamp(28px,5.2vw,44px);line-height:1.02;margin:6px 0 0;
+  font-weight:700;letter-spacing:-.03em;
+}
+h1 em{font-style:normal;color:var(--muted)}
+
+.rail{
+  display:grid;gap:8px;margin-top:16px;
+  grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+}
+.chip{
+  background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);
+  padding:8px 13px;min-width:96px;
+}
+.chip.key{border-color:rgba(201,162,39,.45);background:linear-gradient(180deg,rgba(201,162,39,.07),transparent)}
+.chip .k{font-size:9px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip .k b{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold);letter-spacing:.02em}
+.chip .v{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:19px;font-weight:700;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:1px}
+.chip .v.sm{font-size:14px;letter-spacing:0}
+.chip .v .sec{color:var(--muted);font-size:.66em;font-weight:600}
+.chip .v .wd{color:var(--muted);font-size:.6em;font-weight:400;margin-left:4px}
+.chip .v .qn{color:var(--gold)}
+.chip .v .of{color:var(--muted);font-weight:400}
+.chip .v .rng{font-size:.86em;letter-spacing:-.03em}
+.chip .v .colon{animation:blink 2s steps(1,end) infinite}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.chip .v .colon{animation:none}}
+
+/* ---------- day tape (signature) ---------- */
+.tape-wrap{margin:22px 0 6px}
+.tape-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;
+}
+.tape{
+  position:relative;display:grid;grid-template-columns:repeat(16,1fr);gap:2px;
+  height:34px;border:1px solid var(--rule);border-radius:var(--r);padding:3px;background:var(--panel);
+}
+.tape i{
+  display:block;border-radius:2px;background:#1C2942;transition:background .25s ease;
+}
+.tape i[data-p="A"]{background:var(--a)} .tape i[data-p="M"]{background:var(--m)}
+.tape i[data-p="D"]{background:var(--d)} .tape i[data-p="X"]{background:var(--x)}
+.tape i.now{box-shadow:0 0 0 2px var(--gold) inset}
+.tape-marker{
+  position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold);
+  border-radius:2px;pointer-events:none;transition:left .4s ease;
+}
+.tape-marker::before{
+  content:'';position:absolute;top:-4px;left:-3px;border:4px solid transparent;border-top-color:var(--gold);
+}
+.tape-labels{display:grid;grid-template-columns:repeat(4,1fr);margin-top:6px;
+  font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center}
+
+/* ---------- toolbar ---------- */
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:24px 0 18px}
+.field{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--rule);
+  border-radius:var(--r);padding:6px 11px}
+.field label{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.field input{
+  background:none;border:0;color:var(--paper);font:600 14px/1 'JetBrains Mono',monospace;
+  width:118px;outline:none;
+}
+.field input::placeholder{color:#4A5A75}
+.spacer{flex:1}
+button{
+  font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  background:var(--panel);color:var(--paper);border:1px solid var(--rule);border-radius:var(--r);
+  padding:9px 15px;cursor:pointer;transition:border-color .15s,background .15s,color .15s;
+}
+button:hover{border-color:var(--gold);color:var(--gold)}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.solid{background:var(--gold);border-color:var(--gold);color:#161006}
+button.solid:hover{background:#DDB63A;color:#161006}
+
+/* ---------- groups ---------- */
+.section-label{
+  font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);
+  margin:30px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--rule);
+}
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:780px){.grid{grid-template-columns:1fr 1fr}}
+
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.card.live{border-color:rgba(201,162,39,.55)}
+.card-head{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--panel-2);
+  border-bottom:1px solid var(--rule)}
+.card-head h2{font-size:13px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;margin:0}
+.card-head .sub{font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+.badge{
+  margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.16em;
+  padding:3px 8px;border-radius:3px;border:1px solid var(--rule);color:var(--muted);
+}
+.badge.set{border-color:var(--gold);color:var(--gold)}
+.clr{background:none;border:0;padding:3px 5px;color:var(--muted);font-size:15px;line-height:1;cursor:pointer}
+.clr:hover{color:var(--m);border:0}
+
+.row{display:grid;grid-template-columns:34px minmax(0,1fr) 184px;align-items:center;gap:10px;
+  padding:9px 14px;border-top:1px solid rgba(34,48,74,.6)}
+.row:first-of-type{border-top:0}
+.row.now{background:rgba(201,162,39,.07)}
+.q{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.06em}
+.row.now .q::after{content:'●';margin-left:4px;font-size:8px;vertical-align:middle}
+.lab{min-width:0}
+.lab b{display:block;font-size:13.5px;font-weight:600;letter-spacing:.01em}
+.lab span{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);margin-top:1px}
+
+select{
+  width:100%;font-family:inherit;font-size:12.5px;font-weight:600;
+  background:#0E1728;color:var(--muted);
+  border:1px solid var(--rule);border-left:3px solid var(--rule);
+  border-radius:4px;padding:8px 26px 8px 9px;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 51%,calc(100% - 10px) 51%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  transition:border-color .15s,color .15s;
+}
+select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+select[data-p]{color:var(--paper)}
+select[data-p="A"]{border-left-color:var(--a)} select[data-p="M"]{border-left-color:var(--m)}
+select[data-p="D"]{border-left-color:var(--d)} select[data-p="X"]{border-left-color:var(--x)}
+select option{background:#0E1728;color:var(--paper)}
+
+/* ---------- legend + notes + reference ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+.pill{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--rule);
+  border-radius:99px;padding:5px 12px 5px 8px;font-size:12px}
+.dot{width:9px;height:9px;border-radius:99px;display:block}
+.seq{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.14em;
+  display:flex;align-items:center;gap:9px;padding:5px 12px;border:1px dashed var(--rule);border-radius:99px}
+
+textarea{
+  width:100%;min-height:120px;resize:vertical;background:var(--panel);color:var(--paper);
+  border:1px solid var(--rule);border-radius:var(--r);padding:12px 13px;
+  font-family:inherit;font-size:14px;line-height:1.6;outline:none;
+}
+textarea:focus{border-color:var(--gold)}
+.note-lab{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 7px}
+
+details.ref{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);margin-top:14px}
+details.ref summary{cursor:pointer;padding:13px 16px;font-size:12px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;list-style:none}
+details.ref summary::-webkit-details-marker{display:none}
+details.ref summary::before{content:'+';color:var(--gold);margin-right:9px;font-family:'JetBrains Mono',monospace}
+details.ref[open] summary::before{content:'–'}
+.ref-body{padding:0 16px 16px}
+table.ref-t{width:100%;border-collapse:collapse;font-size:13px}
+table.ref-t th{text-align:left;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;padding:8px 8px;border-bottom:1px solid var(--rule)}
+table.ref-t td{padding:7px 8px;border-bottom:1px solid rgba(34,48,74,.5)}
+table.ref-t td.t{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold);text-align:right}
+.ref-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+
+footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
+  font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#4A5A75}
+
+.print-head{display:none}
+.print-head .ph-brand{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#8a6d14;font-weight:700}
+.print-head h3{margin:2px 0 0;font-size:19px;letter-spacing:-.02em}
+.print-head .ph-meta{display:flex;gap:14px;align-items:baseline;font-family:'JetBrains Mono',monospace;font-size:12px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:var(--gold);color:#161006;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:10px 18px;border-radius:99px;transition:opacity .2s,transform .2s;z-index:50}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:620px){
+  body{font-size:13.5px}
+  .wrap{padding:14px 13px 44px}
+  .brand{font-size:9.5px;letter-spacing:.26em}
+  h1{font-size:clamp(21px,6.4vw,30px)}
+  .rail{grid-template-columns:repeat(auto-fit,minmax(103px,1fr));gap:6px;margin-top:12px}
+  .chip{min-width:0;padding:6px 8px}
+  .chip .k{font-size:7.5px;letter-spacing:.11em}
+  .chip .v{font-size:15px}
+  .chip .v.sm{font-size:11.5px}
+
+  .tape-wrap{margin:16px 0 4px}
+  .tape{height:24px;padding:2px;gap:1.5px}
+  .tape-head{font-size:9px;letter-spacing:.16em}
+  .tape-head span:last-child{display:none}
+  .tape-labels{font-size:8.5px;letter-spacing:.12em}
+
+  .legend{gap:6px;margin-top:12px}
+  .pill{font-size:11px;padding:4px 9px 4px 7px;gap:5px}
+  .dot{width:7px;height:7px}
+  .seq{font-size:10.5px;padding:4px 9px;letter-spacing:.1em}
+
+  .bar{gap:7px;margin:16px 0 12px}
+  .field{padding:5px 9px}
+  .field label{font-size:8.5px;letter-spacing:.14em}
+  .field input{font-size:12.5px;width:104px}
+  .field input[type=date]{width:118px}
+  button{font-size:10.5px;padding:8px 11px;letter-spacing:.07em}
+
+  .section-label{font-size:9px;letter-spacing:.24em;margin:20px 0 9px}
+  .grid{gap:10px}
+
+  .card-head{padding:9px 11px;gap:7px}
+  .card-head h2{font-size:11.5px;letter-spacing:.1em}
+  .card-head .sub{font-size:9.5px}
+  .badge{font-size:9.5px;letter-spacing:.11em;padding:2px 6px}
+
+  .row{grid-template-columns:24px minmax(0,1fr) 132px;gap:6px;padding:7px 10px}
+  .q{font-size:9.5px}
+  .row.now .q::after{font-size:6.5px;margin-left:2px}
+  .lab b{font-size:12px}
+  .lab span{font-size:9px}
+  select{
+    font-size:10.5px;padding:7px 19px 7px 6px;border-left-width:3px;
+    background-position:calc(100% - 12px) 51%,calc(100% - 8px) 51%;
+  }
+
+  .note-lab{font-size:9px;letter-spacing:.16em}
+  textarea{font-size:13px;min-height:96px;padding:10px 11px}
+  details.ref summary{font-size:10.5px;padding:11px 13px;letter-spacing:.12em}
+  .ref-body{padding:0 13px 13px}
+  table.ref-t{font-size:11.5px}
+  table.ref-t th{font-size:8.5px;letter-spacing:.14em;padding:6px 5px}
+  table.ref-t td{padding:5px 5px}
+  footer{font-size:9px;letter-spacing:.12em}
+}
+@media (max-width:360px){
+  .field input{font-size:12px;width:88px}
+  .field input[type=date]{width:108px}
+  .row{grid-template-columns:20px minmax(0,1fr) 118px;padding:6px 8px}
+  select{font-size:9.5px;padding:6px 17px 6px 5px}
+  .lab b{font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+@media print{
+  @page{size:A4;margin:11mm}
+  body{background:#fff;color:#000;font-size:11px}
+  .bar,.rail,.tape-marker,.clr,.toast,.legend .seq{display:none!important}
+  .print-head{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    padding-bottom:7px;margin-bottom:12px;border-bottom:2px solid #111;
+    position:running(none);
+  }
+  .print-head .ph-meta{color:#333}
+  .masthead{display:none!important}
+  .tape-wrap{margin:0 0 12px}
+  .tape{background:#fff!important;border-color:#999!important;height:22px}
+  .tape i{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#EEE}
+  .tape-head,.tape-labels{color:#555!important}
+  footer{border-color:#999!important;color:#555!important}
+  .wrap{max-width:none;padding:0}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card-head,select,textarea{background:#fff!important;color:#000!important;border-color:#999!important}
+  .card{break-inside:avoid;page-break-inside:avoid}
+  .pill,.seq{background:#fff!important;border-color:#999!important;color:#000!important}
+  .dot,select[data-p]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  select[data-p="A"]{border-left-color:var(--a)!important} select[data-p="M"]{border-left-color:var(--m)!important}
+  select[data-p="D"]{border-left-color:var(--d)!important} select[data-p="X"]{border-left-color:var(--x)!important}
+  .note-lab,.q{color:#8a6d14!important}
+  .section-label{color:#555!important}
+  .lab span,.card-head .sub,table.ref-t td{color:#333!important}
+  select{-webkit-appearance:none;background-image:none}
+  .row.now,.card.live{background:#fff!important;border-color:#999!important}
+  details.ref{display:none!important}
+  .section-label{break-after:avoid;page-break-after:avoid}
+  textarea::placeholder{color:transparent!important}
+  textarea{min-height:78px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="print-head" id="printHead" aria-hidden="true">
+    <div>
+      <div class="ph-brand">QuantumPipz · Daily Trader Worksheet</div>
+      <h3>Quarterly Theory Checklist</h3>
+    </div>
+    <div class="ph-meta"><b id="phPair">—</b><span id="phDate">—</span></div>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <div class="brand">QuantumPipz · Daily Trader Worksheet</div>
+      <h1>Quarterly Theory <em>Checklist</em></h1>
+    </div>
+  </header>
+
+  <div class="rail">
+    <div class="chip key"><div class="k">Singapore <b>GMT+8</b></div><div class="v" id="cSgt">--:--:--</div></div>
+    <div class="chip"><div class="k">Monthly</div><div class="v sm" id="lqMonthly">—</div></div>
+    <div class="chip"><div class="k">Weekly</div><div class="v sm" id="lqWeekly">—</div></div>
+    <div class="chip"><div class="k">Daily</div><div class="v sm" id="lqDaily">—</div></div>
+    <div class="chip"><div class="k">Micro</div><div class="v sm" id="lqMicro">—</div></div>
+    <div class="chip"><div class="k">Micro ends in</div><div class="v" id="cCount">--:--</div></div>
+  </div>
+
+  <div class="tape-wrap">
+    <div class="tape-head"><span>The trading day — 16 micro quarters</span><span>06:00 → 06:00 SGT</span></div>
+    <div class="tape" id="tape"><div class="tape-marker" id="marker" style="left:0"></div></div>
+    <div class="tape-labels"><span>Asian</span><span>London</span><span>NY AM</span><span>NY PM</span></div>
+  </div>
+
+  <div class="legend">
+    <span class="pill"><i class="dot" style="background:var(--a)"></i>A — Accumulation</span>
+    <span class="pill"><i class="dot" style="background:var(--m)"></i>M — Manipulation</span>
+    <span class="pill"><i class="dot" style="background:var(--d)"></i>D — Distribution</span>
+    <span class="pill"><i class="dot" style="background:var(--x)"></i>X — Expansion</span>
+    <span class="seq">X→A→M→D <span style="color:#4A5A75">or</span> A→M→D→X</span>
+  </div>
+
+  <div class="bar">
+    <div class="field"><label for="fDate">Date</label><input id="fDate" type="date"></div>
+    <div class="field"><label for="fPair">Pair</label><input id="fPair" placeholder="XAUUSD" maxlength="12"></div>
+    <div class="spacer"></div>
+    <button id="bPrint">Download PDF</button>
+    <button id="bCopy">Copy summary</button>
+    <button id="bReset" class="solid">Clear all</button>
+  </div>
+
+  <div class="section-label">Higher timeframe</div>
+  <div class="grid" id="gridHTF"></div>
+
+  <div class="section-label">Micro sessions</div>
+  <div class="grid" id="gridMicro"></div>
+
+  <div class="section-label">Plan &amp; review</div>
+  <div class="grid">
+    <div><p class="note-lab">Bias &amp; draw on liquidity</p><textarea id="nBias" placeholder="Where is price being drawn to, and which side is the liquidity on?"></textarea></div>
+    <div><p class="note-lab">Which quarter am I hunting</p><textarea id="nPlan" placeholder="Name the quarter you'll take the entry in, and what confirms it."></textarea></div>
+    <div><p class="note-lab">Trades taken</p><textarea id="nTrades" placeholder="Quarter, entry, reason."></textarea></div>
+    <div><p class="note-lab">Review — was the sequence correct?</p><textarea id="nReview" placeholder="Did the phases play out in order? What did you misread?"></textarea></div>
+  </div>
+
+  <details class="ref">
+    <summary>True Opens reference</summary>
+    <div class="ref-body">
+      <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:62ch">
+        A True Open is the reference price a quarter opens from — not the candle open of the range. All times SGT (GMT+8).
+      </p>
+      <table class="ref-t" style="margin-bottom:20px">
+        <tr><th>Macro true open</th><th>Sits at</th><th style="text-align:right">Time</th></tr>
+        <tr><td>True Week Open</td><td style="color:var(--muted)">Tuesday — Q2 of the week</td><td class="t">06:00:00</td></tr>
+        <tr><td>True Day Open</td><td style="color:var(--muted)">London — Q2 of the day</td><td class="t">12:00:00</td></tr>
+        <tr><td>Asian Session Open</td><td style="color:var(--muted)">Q2 of the Asian session</td><td class="t">08:30:00</td></tr>
+        <tr><td>London Session Open</td><td style="color:var(--muted)">Q2 of the London session</td><td class="t">13:30:00</td></tr>
+        <tr><td>NY AM Session Open</td><td style="color:var(--muted)">Q2 of the NY AM session</td><td class="t">19:30:00</td></tr>
+        <tr><td>NY PM Session Open</td><td style="color:var(--muted)">Q2 of the NY PM session</td><td class="t">01:30:00</td></tr>
+      </table>
+      <div class="ref-grid" id="refMicro"></div>
+    </div>
+  </details>
+
+  <footer>QuantumPipz · Quarterly Theory Checklist · All times SGT (GMT+8)</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- phase model ---------- */
+  var AMDX = ['A','M','D','X'];
+  var XAMD = ['X','A','M','D'];
+  var NAME = {A:'Accumulation', M:'Manipulation', D:'Distribution', X:'Expansion'};
+
+  /* Each quarter offers exactly two phases — one per valid pattern. */
+  function optionsFor(qi){ return [AMDX[qi], XAMD[qi]]; }
+  function patternFor(qi, phase){
+    if (phase === AMDX[qi]) return 'AMDX';
+    if (phase === XAMD[qi]) return 'XAMD';
+    return null;
+  }
+  function seqOf(pattern){ return pattern === 'AMDX' ? AMDX : pattern === 'XAMD' ? XAMD : null; }
+
+  /* ---------- structure ---------- */
+  var MICRO_RANGES = [
+    ['06:00 – 07:30','07:30 – 09:00','09:00 – 10:30','10:30 – 12:00'],
+    ['12:00 – 13:30','13:30 – 15:00','15:00 – 16:30','16:30 – 18:00'],
+    ['18:00 – 19:30','19:30 – 21:00','21:00 – 22:30','22:30 – 00:00'],
+    ['00:00 – 01:30','01:30 – 03:00','03:00 – 04:30','04:30 – 06:00']
+  ];
+  var MICRO_OPENS = [
+    ['06:22:30','07:52:30','09:22:30','10:52:30'],
+    ['12:22:30','13:52:30','15:22:30','16:52:30'],
+    ['18:22:30','19:52:30','21:22:30','22:52:30'],
+    ['00:22:30','01:52:30','03:22:30','04:52:30']
+  ];
+  var SESSIONS = ['Asian','London','NY AM','NY PM'];
+  var SESSION_RANGE = ['06:00 – 12:00','12:00 – 18:00','18:00 – 00:00','00:00 – 06:00'];
+
+  var GROUPS = [
+    {id:'monthly', title:'Monthly', sub:'', zone:'htf',
+     rows:[['Week 1',''],['Week 2',''],['Week 3',''],['Week 4','']]},
+    {id:'weekly', title:'Weekly', sub:'', zone:'htf',
+     rows:[['Monday',''],['Tuesday',''],['Wednesday',''],['Thursday','']]},
+    {id:'daily', title:'Daily', sub:'Sessions', zone:'htf', span:true,
+     rows:SESSIONS.map(function(s,i){ return [s, SESSION_RANGE[i]]; })}
+  ];
+  SESSIONS.forEach(function(s,i){
+    GROUPS.push({id:'micro'+i, title:s, sub:'Daily Q'+(i+1), zone:'micro', session:i,
+      rows:MICRO_RANGES[i].map(function(r,j){ return ['Micro '+(j+1), r]; })});
+  });
+
+  /* ---------- storage (degrades silently if unavailable) ---------- */
+  var KEY = 'qp-quarterly-checklist';
+  var mem = {};
+  function load(){
+    try { var raw = window.localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }
+    catch(e){}
+    return mem;
+  }
+  function save(){
+    try { window.localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+    mem = state;
+  }
+
+  var state = load() || {};
+  if(!state.patterns) state.patterns = {};
+  if(!state.notes) state.notes = {};
+
+  /* ---------- build ---------- */
+  var elHTF = document.getElementById('gridHTF');
+  var elMicro = document.getElementById('gridMicro');
+
+  GROUPS.forEach(function(g){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + g.id;
+    if (g.span) card.style.gridColumn = '1 / -1';
+
+    var head = document.createElement('div');
+    head.className = 'card-head';
+    head.innerHTML = '<h2>' + g.title + '</h2>' +
+      (g.sub ? '<span class="sub">' + g.sub + '</span>' : '') +
+      '<span class="badge" id="badge-' + g.id + '">— — — —</span>';
+    var clr = document.createElement('button');
+    clr.className = 'clr'; clr.type = 'button';
+    clr.setAttribute('aria-label','Clear ' + g.title);
+    clr.textContent = '×';
+    clr.addEventListener('click', function(){ setPattern(g.id, null); });
+    head.appendChild(clr);
+    card.appendChild(head);
+
+    g.rows.forEach(function(row, qi){
+      var r = document.createElement('div');
+      r.className = 'row';
+      r.id = 'row-' + g.id + '-' + qi;
+
+      var q = document.createElement('div'); q.className='q'; q.textContent='Q'+(qi+1);
+      var lab = document.createElement('div'); lab.className='lab';
+      lab.innerHTML = '<b>' + row[0] + '</b>' + (row[1] ? '<span>' + row[1] + '</span>' : '');
+
+      var wrap = document.createElement('div'); wrap.className='sel';
+      var sel = document.createElement('select');
+      sel.id = 'sel-' + g.id + '-' + qi;
+      sel.setAttribute('aria-label', g.title + ' Q' + (qi+1) + ' phase');
+      var blank = document.createElement('option');
+      blank.value=''; blank.textContent='Select phase';
+      sel.appendChild(blank);
+      optionsFor(qi).forEach(function(p){
+        var o = document.createElement('option');
+        o.value = p; o.textContent = p + '  ' + NAME[p];
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function(){
+        setPattern(g.id, this.value ? patternFor(qi, this.value) : null);
+      });
+      wrap.appendChild(sel);
+
+      r.appendChild(q); r.appendChild(lab); r.appendChild(wrap);
+      card.appendChild(r);
+    });
+
+    (g.zone === 'micro' ? elMicro : elHTF).appendChild(card);
+  });
+
+  /* ---------- render ---------- */
+  function setPattern(gid, pattern){
+    if (pattern) state.patterns[gid] = pattern; else delete state.patterns[gid];
+    save();
+    renderGroup(gid);
+    renderTape();
+  }
+
+  function renderGroup(gid){
+    var pattern = state.patterns[gid] || null;
+    var seq = seqOf(pattern);
+    for (var qi=0; qi<4; qi++){
+      var sel = document.getElementById('sel-'+gid+'-'+qi);
+      if (!sel) continue;
+      if (seq){ sel.value = seq[qi]; sel.setAttribute('data-p', seq[qi]); }
+      else { sel.value = ''; sel.removeAttribute('data-p'); }
+    }
+    var badge = document.getElementById('badge-'+gid);
+    if (seq){ badge.textContent = seq.join(' '); badge.classList.add('set'); }
+    else { badge.textContent = '— — — —'; badge.classList.remove('set'); }
+  }
+
+  GROUPS.forEach(function(g){ renderGroup(g.id); });
+
+  /* ---------- day tape ---------- */
+  var tape = document.getElementById('tape');
+  var cells = [];
+  for (var i=0;i<16;i++){ var c=document.createElement('i'); tape.appendChild(c); cells.push(c); }
+
+  function renderTape(){
+    for (var s=0;s<4;s++){
+      var seq = seqOf(state.patterns['micro'+s]);
+      for (var q=0;q<4;q++){
+        var cell = cells[s*4+q];
+        if (seq) cell.setAttribute('data-p', seq[q]); else cell.removeAttribute('data-p');
+        cell.title = SESSIONS[s] + ' Q' + (q+1) + ' · ' + MICRO_RANGES[s][q] +
+                     (seq ? ' · ' + NAME[seq[q]] : '');
+      }
+    }
+  }
+  renderTape();
+
+  /* ---------- live SGT clock ---------- */
+  function sgt(){
+    var parts = new Intl.DateTimeFormat('en-GB',{
+      timeZone:'Asia/Singapore', hour12:false,
+      weekday:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'
+    }).formatToParts(new Date());
+    var o = {};
+    parts.forEach(function(p){ o[p.type] = p.value; });
+    return { h:+o.hour, m:+o.minute, day:o.weekday, date:+o.day };
+  }
+
+  /* Live Singapore wall clock (GMT+8), independent of the visitor's own timezone. */
+  function sgtNow(){
+    var f = new Intl.DateTimeFormat('en-GB',{
+      timeZone:'Asia/Singapore', hour12:false, weekday:'short', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit'
+    }).formatToParts(new Date());
+    var o = {};
+    f.forEach(function(p){ o[p.type] = p.value; });
+    return { h:+o.hour % 24, m:+o.minute, s:+o.second, day:o.weekday, date:+o.day };
+  }
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  function set(id, html){ var e = document.getElementById(id); if (e) e.innerHTML = html; }
+  function setTxt(id, txt){ var e = document.getElementById(id); if (e) e.textContent = txt; }
+
+  var WEEK_DAYS = ['Mon','Tue','Wed','Thu'];
+
+  function clock(){
+    var sg = sgtNow();
+
+    set('cSgt', pad(sg.h) + '<span class="colon">:</span>' + pad(sg.m) +
+                '<span class="sec">:' + pad(sg.s) + '</span>' +
+                '<span class="wd">' + sg.day + '</span>');
+
+    /* position inside the 90-minute micro grid, measured from 06:00 SGT */
+    var secs = sg.h*3600 + sg.m*60 + sg.s;
+    var into = (((secs - 21600) % 86400) + 86400) % 86400;
+    var idx  = Math.floor(into / 5400);            // 0–15
+    var sess = Math.floor(idx / 4), q = idx % 4;
+    var left = 5400 - (into % 5400);
+
+    /* live quarter at every timeframe */
+    var mw = Math.min(3, Math.floor((sg.date - 1) / 7));
+    set('lqMonthly', '<span class="qn">Q' + (mw+1) + '</span> Week ' + (mw+1));
+
+    var wd = WEEK_DAYS.indexOf(sg.day);
+    set('lqWeekly', wd > -1
+      ? '<span class="qn">Q' + (wd+1) + '</span> ' + sg.day
+      : '<span class="of">' + sg.day + ' · off-grid</span>');
+
+    set('lqDaily', '<span class="qn">Q' + (sess+1) + '</span> ' + SESSIONS[sess]);
+    set('lqMicro', '<span class="qn">Q' + (q+1) + '</span> ' +
+                   '<span class="rng">' + MICRO_RANGES[sess][q].replace(' – ','–') + '</span>');
+
+    setTxt('cCount', pad(Math.floor(left/60)) + ':' + pad(left % 60));
+
+    document.getElementById('marker').style.left = (into / 86400 * 100) + '%';
+    return { sg:sg, idx:idx };
+  }
+
+  function tick(){
+    var c = clock();
+    var idx = c.idx, sess = Math.floor(idx/4), q = idx % 4;
+
+    cells.forEach(function(cell,i){ cell.classList.toggle('now', i === idx); });
+
+    document.querySelectorAll('.row.now').forEach(function(el){ el.classList.remove('now'); });
+    document.querySelectorAll('.card.live').forEach(function(el){ el.classList.remove('live'); });
+
+    mark('row-daily-' + sess);
+    mark('row-micro' + sess + '-' + q);
+    live('card-micro' + sess);
+
+    var wd = WEEK_DAYS.indexOf(c.sg.day);
+    if (wd > -1) mark('row-weekly-' + wd);
+    mark('row-monthly-' + Math.min(3, Math.floor((c.sg.date - 1) / 7)));
+  }
+  function mark(id){ var e=document.getElementById(id); if(e) e.classList.add('now'); }
+  function live(id){ var e=document.getElementById(id); if(e) e.classList.add('live'); }
+
+  tick();
+  setInterval(clock, 1000);   // seconds
+  setInterval(tick, 10000);   // quarter / row highlighting
+
+  /* ---------- true opens reference ---------- */
+  var ref = document.getElementById('refMicro');
+  SESSIONS.forEach(function(s,i){
+    var d = document.createElement('div');
+    var rows = MICRO_OPENS[i].map(function(t,j){
+      return '<tr><td>Q'+(j+1)+' <span style="color:var(--muted)">'+MICRO_RANGES[i][j]+'</span></td><td class="t">'+t+'</td></tr>';
+    }).join('');
+    d.innerHTML = '<table class="ref-t"><tr><th colspan="2">'+s+' — micro true opens</th></tr>'+rows+'</table>';
+    ref.appendChild(d);
+  });
+
+  /* ---------- fields & notes ---------- */
+  var fields = ['fDate','fPair','nBias','nPlan','nTrades','nReview'];
+  fields.forEach(function(id){
+    var el = document.getElementById(id);
+    if (state.notes[id]) el.value = state.notes[id];
+    el.addEventListener('input', function(){ state.notes[id] = el.value; save(); });
+  });
+  if (!document.getElementById('fDate').value){
+    var t = sgt();
+    var iso = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Singapore'}).format(new Date());
+    document.getElementById('fDate').value = iso;
+    state.notes.fDate = iso; save();
+  }
+
+  /* ---------- toolbar ---------- */
+  function toast(msg){
+    var el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(function(){ el.classList.remove('show'); }, 1800);
+  }
+
+  function syncPrintHead(){
+    var d = state.notes.fDate || '';
+    var nice = d ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB',
+                 {weekday:'short', day:'2-digit', month:'short', year:'numeric'}) : '—';
+    setTxt('phDate', nice);
+    setTxt('phPair', (state.notes.fPair || 'XAUUSD').toUpperCase());
+  }
+  window.addEventListener('beforeprint', syncPrintHead);
+
+  /* ---------- one-click PDF download ----------
+     Self-contained vector PDF writer. No libraries, no print dialog, no network.
+     Uses the two built-in PDF fonts (Helvetica / Helvetica-Bold), so the file
+     stays a few KB and the text remains selectable and searchable.            */
+
+  var HELV = '278 278 355 556 556 889 667 191 333 333 389 584 278 333 278 278 556 556 556 556 556 556 556 556 556 556 278 278 584 584 584 556 1015 667 667 722 722 667 611 778 722 278 500 667 556 833 722 778 667 778 722 667 611 722 667 944 667 667 611 278 278 278 469 556 333 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556 556 556 333 500 278 556 500 722 500 500 500 334 260 334 584'.split(' ').map(Number);
+  var HELB = '278 333 474 556 556 889 722 238 333 333 389 584 278 333 278 278 556 556 556 556 556 556 556 556 556 556 333 333 584 584 584 611 975 722 722 722 722 667 611 778 722 278 556 722 611 833 722 778 667 778 722 667 611 722 667 944 667 667 611 333 278 333 584 556 333 556 611 556 611 556 333 611 611 278 278 556 278 889 611 611 611 611 389 556 333 611 556 778 556 556 500 389 280 389 584'.split(' ').map(Number);
+
+  function PDFSheet(){
+    var MM = 2.8346457;                 // mm -> points
+    var PH = 841.89;                    // A4 height in points
+    var ops = [];
+    var cf = null, cs = null, clw = null;
+
+    function n(v){ return Math.round(v * 100) / 100; }
+    function X(mm){ return n(mm * MM); }
+    function Y(mm){ return n(PH - mm * MM); }     // y measured from the top
+    function col(c){ return n(c[0]/255) + ' ' + n(c[1]/255) + ' ' + n(c[2]/255); }
+    function setFill(c){ var k = col(c); if (k !== cf){ ops.push(k + ' rg'); cf = k; } }
+    function setStroke(c){ var k = col(c); if (k !== cs){ ops.push(k + ' RG'); cs = k; } }
+    function setLW(v){ if (v !== clw){ ops.push(n(v * MM) + ' w'); clw = v; } }
+    function esc(t){
+      return String(t).replace(/[^\x20-\x7E]/g, function(ch){
+        return ({'\u2013':'-','\u2014':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"',
+                 '\u00b7':'.','\u2192':'>','\u2026':'...'})[ch] || '?';
+      }).replace(/([\\()])/g, '\\$1');
+    }
+
+    var api = {
+      width: function(t, o){
+        o = o || {};
+        var tb = o.bold ? HELB : HELV, sz = o.size || 10, cspc = o.charSpace || 0, w = 0;
+        String(t).split('').forEach(function(ch){
+          var i = ch.charCodeAt(0) - 32;
+          w += ((i >= 0 && i < tb.length) ? tb[i] : 500) / 1000 * sz + cspc;
+        });
+        return w / MM;                                   // returned in mm
+      },
+      rect: function(x, y, w, h, o){
+        o = o || {};
+        var mode = '';
+        if (o.fill){ setFill(o.fill); mode += 'f'; }
+        if (o.stroke){ setStroke(o.stroke); setLW(o.lw || 0.25); mode = o.fill ? 'B' : 'S'; }
+        if (!mode) return;
+        ops.push(X(x) + ' ' + Y(y + h) + ' ' + n(w * MM) + ' ' + n(h * MM) + ' re ' + mode);
+      },
+      circle: function(cx, cy, r, o){
+        setFill(o.fill);
+        var k = 0.5523 * r, x = cx, y = cy;
+        function pt(a, b){ return X(a) + ' ' + Y(b); }
+        ops.push(pt(x - r, y) + ' m');
+        ops.push(pt(x - r, y - k) + ' ' + pt(x - k, y - r) + ' ' + pt(x, y - r) + ' c');
+        ops.push(pt(x + k, y - r) + ' ' + pt(x + r, y - k) + ' ' + pt(x + r, y) + ' c');
+        ops.push(pt(x + r, y + k) + ' ' + pt(x + k, y + r) + ' ' + pt(x, y + r) + ' c');
+        ops.push(pt(x - k, y + r) + ' ' + pt(x - r, y + k) + ' ' + pt(x - r, y) + ' c f');
+      },
+      text: function(t, x, y, o){
+        o = o || {};
+        var sz = o.size || 10, cspc = o.charSpace || 0;
+        var w = api.width(t, {size:sz, bold:o.bold, charSpace:cspc});
+        if (o.align === 'right') x -= w;
+        else if (o.align === 'center') x -= w / 2;
+        setFill(o.color || [0,0,0]);
+        ops.push('BT /' + (o.bold ? 'F2' : 'F1') + ' ' + n(sz) + ' Tf ' +
+                 (cspc ? n(cspc) + ' Tc ' : '0 Tc ') +
+                 '1 0 0 1 ' + X(x) + ' ' + Y(y) + ' Tm (' + esc(t) + ') Tj ET');
+      },
+      wrap: function(t, maxW, o){
+        var words = String(t).split(/\s+/), lines = [], line = '';
+        words.forEach(function(word){
+          var probe = line ? line + ' ' + word : word;
+          if (api.width(probe, o) > maxW && line){ lines.push(line); line = word; }
+          else line = probe;
+        });
+        if (line) lines.push(line);
+        return lines;
+      },
+      blob: function(){
+        var content = ops.join('\n');
+        var objs = [
+          '<< /Type /Catalog /Pages 2 0 R >>',
+          '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+          '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+            '/Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
+          '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream',
+          '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+          '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
+        ];
+        var out = '%PDF-1.4\n', offs = [];
+        objs.forEach(function(o, i){
+          offs.push(out.length);
+          out += (i + 1) + ' 0 obj\n' + o + '\nendobj\n';
+        });
+        var xref = out.length;
+        out += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+        offs.forEach(function(o){ out += String(o).padStart(10, '0') + ' 00000 n \n'; });
+        out += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+
+        var bytes = new Uint8Array(out.length);
+        for (var i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xFF;
+        return new Blob([bytes], {type:'application/pdf'});
+      }
+    };
+    return api;
+  }
+
+  var RGB = {
+    A:[76,143,209], M:[224,101,75], D:[169,124,214], X:[63,191,127],
+    ink:[15,27,45], gold:[154,123,47], mute:[110,120,138],
+    rule:[201,206,215], wash:[240,242,246], empty:[228,231,237], near:[252,252,253]
+  };
+
+  function niceDate(){
+    var d = state.notes.fDate;
+    if (!d) return '';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB',
+      {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+  }
+
+  function buildSheet(){
+    var P = PDFSheet();
+    var M = 12, W = 210 - M*2, COL = (W - 6) / 2;
+
+    /* header */
+    P.text('QUANTUMPIPZ   DAILY TRADER WORKSHEET', M, M + 3, {size:7, bold:true, color:RGB.gold, charSpace:0.6});
+    P.text('Quarterly Theory Checklist', M, M + 11.5, {size:17, bold:true, color:RGB.ink});
+    P.text((state.notes.fPair || 'XAUUSD').toUpperCase(), 210 - M, M + 5,  {size:10, bold:true, color:RGB.ink, align:'right'});
+    P.text(niceDate(), 210 - M, M + 10.5, {size:8.5, color:RGB.mute, align:'right'});
+    P.rect(M, M + 14, W, 0.6, {fill:RGB.ink});
+
+    /* day tape */
+    var ty = M + 18, th = 5, seg = (W - 15 * 0.8) / 16;
+    for (var i = 0; i < 16; i++){
+      var sq = seqOf(state.patterns['micro' + Math.floor(i / 4)]);
+      P.rect(M + i * (seg + 0.8), ty, seg, th, {fill: sq ? RGB[sq[i % 4]] : RGB.empty});
+    }
+    ['ASIAN','LONDON','NY AM','NY PM'].forEach(function(nm, k){
+      P.text(nm, M + (k + 0.5) * (W / 4), ty + th + 3, {size:5.6, bold:true, color:RGB.mute, align:'center', charSpace:0.5});
+    });
+
+    /* legend */
+    var ly = ty + th + 8, lx = M;
+    ['A','M','D','X'].forEach(function(k){
+      P.circle(lx + 1.3, ly - 0.9, 1.3, {fill:RGB[k]});
+      var t = k + '  ' + NAME[k];
+      P.text(t, lx + 3.8, ly, {size:7.5, color:RGB.ink});
+      lx += 3.8 + P.width(t, {size:7.5}) + 7;
+    });
+    P.text('X-A-M-D   or   A-M-D-X', 210 - M, ly, {size:7.5, color:RGB.mute, align:'right'});
+
+    /* one quarter block */
+    function block(x, y, w, title, sub, gid, rows){
+      var seq = seqOf(state.patterns[gid]);
+      var hh = 6.4, rh = 6.8;
+
+      P.rect(x, y, w, hh, {fill:RGB.wash, stroke:RGB.rule, lw:0.25});
+      P.rect(x, y, 1.1, hh, {fill:RGB.gold});
+      P.text(title.toUpperCase(), x + 3.4, y + 4.4, {size:8, bold:true, color:RGB.ink, charSpace:0.4});
+      if (sub) P.text(sub, x + 3.4 + P.width(title.toUpperCase(), {size:8, bold:true, charSpace:0.4}) + 3, y + 4.4,
+                      {size:6.6, color:RGB.mute});
+      P.text(seq ? seq.join(' ') : '- - - -', x + w - 2.5, y + 4.4,
+             {size:7, bold:true, color: seq ? RGB.gold : RGB.rule, align:'right', charSpace:0.7});
+
+      var chipW = Math.min(42, w * 0.45);
+      rows.forEach(function(r, qi){
+        var ry = y + hh + qi * rh;
+        P.rect(x, ry, w, rh, {stroke:RGB.rule, lw:0.2});
+        P.text('Q' + (qi + 1), x + 2.4, ry + 4.3, {size:6.4, bold:true, color:RGB.gold});
+        P.text(r[0], x + 8, ry + (r[1] ? 3.4 : 4.4), {size:8, bold:true, color:RGB.ink});
+        if (r[1]) P.text(r[1].replace(' – ', ' - '), x + 8, ry + 5.8, {size:6, color:RGB.mute});
+
+        var cx = x + w - chipW - 1.2, cy = ry + 1.1, ch = rh - 2.2;
+        if (seq){
+          var ph = seq[qi];
+          P.rect(cx, cy, chipW, ch, {fill:RGB.near, stroke:RGB.rule, lw:0.2});
+          P.rect(cx, cy, 1.3, ch, {fill:RGB[ph]});
+          P.text(ph + '  ' + NAME[ph], cx + 3.4, cy + ch / 2 + 1.3, {size:7.4, bold:true, color:RGB.ink});
+        } else {
+          P.rect(cx, cy, chipW, ch, {stroke:RGB.rule, lw:0.2});
+        }
+      });
+      return y + hh + rows.length * rh;
+    }
+
+    function heading(txt, y){
+      P.text(txt.toUpperCase(), M, y, {size:6, bold:true, color:RGB.gold, charSpace:0.5});
+      P.rect(M, y + 2.4, W, 0.2, {fill:RGB.rule});
+      return y + 5.6;
+    }
+
+    var y = heading('Higher timeframe', ly + 6);
+    var yA = block(M, y, COL, 'Monthly', '', 'monthly', GROUPS[0].rows);
+    var yB = block(M + COL + 6, y, COL, 'Weekly', '', 'weekly', GROUPS[1].rows);
+    y = Math.max(yA, yB) + 4;
+    y = block(M, y, W, 'Daily', 'Sessions', 'daily', GROUPS[2].rows) + 7;
+
+    y = heading('Micro sessions', y);
+    for (var row = 0; row < 2; row++){
+      var l = block(M, y, COL, SESSIONS[row*2], 'Daily Q' + (row*2+1), 'micro'+(row*2), GROUPS[3+row*2].rows);
+      var r = block(M + COL + 6, y, COL, SESSIONS[row*2+1], 'Daily Q' + (row*2+2), 'micro'+(row*2+1), GROUPS[4+row*2].rows);
+      y = Math.max(l, r) + 4;
+    }
+
+    y = heading('Plan & review', y + 3);
+    var notes = [
+      ['Bias & draw on liquidity', state.notes.nBias],
+      ['Which quarter am I hunting', state.notes.nPlan],
+      ['Trades taken', state.notes.nTrades],
+      ['Review - was the sequence correct?', state.notes.nReview]
+    ];
+    var boxH = 20;
+    notes.forEach(function(nt, i){
+      var nx = M + (i % 2) * (COL + 6);
+      var ny = y + Math.floor(i / 2) * (boxH + 8);
+      P.text(nt[0].toUpperCase(), nx, ny, {size:6, bold:true, color:RGB.gold, charSpace:0.5});
+      P.rect(nx, ny + 1.8, COL, boxH, {stroke:RGB.rule, lw:0.25});
+      if (nt[1]){
+        P.wrap(nt[1], COL - 5, {size:8}).slice(0, 6).forEach(function(line, k){
+          P.text(line, nx + 2.5, ny + 6.4 + k * 3.6, {size:8, color:RGB.ink});
+        });
+      }
+    });
+
+    P.rect(M, 287, W, 0.2, {fill:RGB.rule});
+    P.text('QUANTUMPIPZ   QUARTERLY THEORY CHECKLIST   ALL TIMES SGT (GMT+8)', M, 290.5,
+           {size:6, color:RGB.mute, charSpace:0.4});
+    return P.blob();
+  }
+
+  function fileName(){
+    var pair = (state.notes.fPair || 'XAUUSD').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var d = state.notes.fDate ||
+            new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Singapore'}).format(new Date());
+    return 'QuarterlyTheory_' + pair + '_' + d + '.pdf';
+  }
+
+  document.getElementById('bPrint').addEventListener('click', function(){
+    try {
+      var url = URL.createObjectURL(buildSheet());
+      var a = document.createElement('a');
+      a.href = url; a.download = fileName();
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      toast('PDF downloaded');
+    } catch (e){
+      toast('Could not build the PDF');
+    }
+  });
+
+  document.getElementById('bReset').addEventListener('click', function(){
+    if (!window.confirm('Clear every phase and note on this sheet?')) return;
+    state = { patterns:{}, notes:{} };
+    save();
+    GROUPS.forEach(function(g){ renderGroup(g.id); });
+    renderTape();
+    fields.forEach(function(id){ document.getElementById(id).value = ''; });
+    toast('Sheet cleared');
+  });
+
+  document.getElementById('bCopy').addEventListener('click', function(){
+    var lines = ['QUARTERLY THEORY — ' + (state.notes.fDate || '') + ' ' + (state.notes.fPair || '')];
+    GROUPS.forEach(function(g){
+      var seq = seqOf(state.patterns[g.id]);
+      lines.push(g.title + (g.sub ? ' ('+g.sub+')' : '') + ': ' + (seq ? seq.join(' → ') : 'not set'));
+    });
+    if (state.notes.nBias)   lines.push('', 'Bias: ' + state.notes.nBias);
+    if (state.notes.nPlan)   lines.push('Plan: ' + state.notes.nPlan);
+    if (state.notes.nTrades) lines.push('Trades: ' + state.notes.nTrades);
+    if (state.notes.nReview) lines.push('Review: ' + state.notes.nReview);
+    var text = lines.join('\n');
+
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Summary copied'); }
+      catch(e){ toast('Copy failed'); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast('Summary copied'); }, fallback);
+    } else fallback();
+  });
+
+})();
+</script>
+</body>
+</html>
