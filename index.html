@@ -128,6 +128,7 @@ button.solid:hover{background:#DDB63A;color:#161006}
 
 /* ---------- chart attachments ---------- */
 .charts{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin:-4px 0 4px}
+.charts-b{margin:20px 0 0}
 .drop{
   display:flex;align-items:center;gap:11px;cursor:pointer;
   border:1px dashed var(--rule);border-radius:var(--r);padding:10px 15px;background:var(--panel);
@@ -463,6 +464,18 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     <div><p class="note-lab">Which quarter am I hunting</p><textarea id="nPlan" placeholder="Name the quarter you'll take the entry in, and what confirms it."></textarea></div>
     <div><p class="note-lab">Trades taken</p><textarea id="nTrades" placeholder="Quarter, entry, reason."></textarea></div>
     <div><p class="note-lab">Review — was the sequence correct?</p><textarea id="nReview" placeholder="Did the phases play out in order? What did you misread?"></textarea></div>
+  </div>
+
+  <div class="charts charts-b">
+    <label class="drop" id="chartDrop2" tabindex="0">
+      <input type="file" id="chartInput2" accept="image/*" multiple hidden>
+      <span class="plus">+</span>
+      <span class="dl">
+        <b>Attach chart screenshot</b>
+        <em>Click, drag in, or paste &mdash; each chart gets its own page in the PDF</em>
+      </span>
+    </label>
+    <div class="thumbs" id="thumbs2"></div>
   </div>
 
   <div class="finish">
@@ -1270,41 +1283,49 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   }
 
   function renderThumbs(){
-    var box = document.getElementById('thumbs');
-    box.innerHTML = '';
-    charts.forEach(function(ch, i){
-      var d = document.createElement('div');
-      d.className = 'thumb';
-      var im = document.createElement('img'); im.src = ch.thumb; im.alt = 'Chart ' + (i+1);
-      var cap = document.createElement('div'); cap.className = 'cap';
-      var lab = document.createElement('span'); lab.textContent = ch.w > ch.h ? 'Landscape' : 'Portrait';
-      var kill = document.createElement('button');
-      kill.className = 'kill'; kill.type = 'button'; kill.textContent = '\u00d7';
-      kill.setAttribute('aria-label', 'Remove chart ' + (i+1));
-      kill.addEventListener('click', function(){ charts.splice(i, 1); renderThumbs(); });
-      cap.appendChild(lab); cap.appendChild(kill);
-      d.appendChild(im); d.appendChild(cap);
-      box.appendChild(d);
+    ['thumbs','thumbs2'].forEach(function(boxId){
+      var box = document.getElementById(boxId);
+      if (!box) return;
+      box.innerHTML = '';
+      charts.forEach(function(ch, i){
+        var d = document.createElement('div');
+        d.className = 'thumb';
+        var im = document.createElement('img'); im.src = ch.thumb; im.alt = 'Chart ' + (i+1);
+        var cap = document.createElement('div'); cap.className = 'cap';
+        var lab = document.createElement('span'); lab.textContent = ch.w > ch.h ? 'Landscape' : 'Portrait';
+        var kill = document.createElement('button');
+        kill.className = 'kill'; kill.type = 'button'; kill.textContent = '\u00d7';
+        kill.setAttribute('aria-label', 'Remove chart ' + (i+1));
+        kill.addEventListener('click', function(){ charts.splice(i, 1); renderThumbs(); });
+        cap.appendChild(lab); cap.appendChild(kill);
+        d.appendChild(im); d.appendChild(cap);
+        box.appendChild(d);
+      });
     });
   }
 
-  var drop = document.getElementById('chartDrop');
-  var chartInput = document.getElementById('chartInput');
-  chartInput.addEventListener('change', function(){
-    Array.prototype.forEach.call(this.files, addChart);
-    this.value = '';
-  });
-  drop.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); chartInput.click(); }
-  });
-  ['dragenter','dragover'].forEach(function(ev){
-    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); });
-  });
-  ['dragleave','drop'].forEach(function(ev){
-    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); });
-  });
-  drop.addEventListener('drop', function(e){
-    Array.prototype.forEach.call(e.dataTransfer.files, addChart);
+  /* wire up every drop zone on the page against the same chart list */
+  [['chartDrop','chartInput'], ['chartDrop2','chartInput2']].forEach(function(pair){
+    var drop = document.getElementById(pair[0]);
+    var input = document.getElementById(pair[1]);
+    if (!drop || !input) return;
+
+    input.addEventListener('change', function(){
+      Array.prototype.forEach.call(this.files, addChart);
+      this.value = '';
+    });
+    drop.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); input.click(); }
+    });
+    ['dragenter','dragover'].forEach(function(ev){
+      drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); });
+    });
+    ['dragleave','drop'].forEach(function(ev){
+      drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', function(e){
+      Array.prototype.forEach.call(e.dataTransfer.files, addChart);
+    });
   });
   document.addEventListener('paste', function(e){
     var items = (e.clipboardData || {}).items || [];
