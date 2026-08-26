@@ -320,8 +320,9 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   .finish .ftext b{font-size:13px}
   .finish .ftext em{font-size:10.5px}
   .finish .fbtns{width:100%;align-items:stretch}
-  .finish .frow{width:100%}
-  .finish .frow button{flex:1}
+  .finish .frow{width:100%;gap:8px}
+  .finish .frow button{flex:1 1 calc(50% - 4px);white-space:nowrap}
+  .finish .frow #bCopy2{flex-basis:100%}
   .modal .sheet{padding:17px 16px 14px}
   .modal h3{font-size:15.5px}
   .modal p{font-size:12.5px}
@@ -433,6 +434,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     <div class="field"><label for="fPair">Pair</label><input id="fPair" placeholder="XAUUSD" maxlength="12"></div>
     <div class="spacer"></div>
     <button id="bPrint">Download PDF</button>
+    <button id="bImg">Save image</button>
     <button id="bCopy">Copy summary</button>
     <button id="bReset" class="solid">Clear all</button>
   </div>
@@ -466,12 +468,13 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   <div class="finish">
     <div class="ftext">
       <b>Done for the day?</b>
-      <em>Exports this sheet plus any attached charts as one PDF you can drop in the group.</em>
+      <em>PDF carries your charts as extra pages. Image is one crisp PNG, ideal for posting straight to the group.</em>
     </div>
     <div class="fbtns">
       <button id="bReset2" class="danger">Clear notes</button>
       <div class="frow">
         <button id="bPrint2" class="solid">Download PDF</button>
+        <button id="bImg2">Save image</button>
         <button id="bCopy2">Copy summary</button>
       </div>
     </div>
@@ -955,8 +958,10 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
       {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
   }
 
-  function buildSheet(){
-    var P = PDFSheet().page(210, 297);
+  /* Draws the sheet through any renderer exposing the same primitives,
+     so the PDF and the PNG come out identical. */
+  function drawSheet(P, withCharts){
+    P.page(210, 297);
     var M = 12, W = 210 - M*2, COL = (W - 6) / 2;
 
     /* which quarter is running at the moment of export */
@@ -1103,7 +1108,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
            {size:6, color:RGB.mute, charSpace:0.4});
 
     /* ---- one page per attached chart, orientation follows the image ---- */
-    charts.forEach(function(ch, i){
+    if (withCharts) charts.forEach(function(ch, i){
       var landscape = ch.w > ch.h;
       var pw = landscape ? 297 : 210, ph = landscape ? 210 : 297;
       P.page(pw, ph);
@@ -1127,8 +1132,107 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
       P.text('QUANTUMPIPZ   QUARTERLY THEORY CHECKLIST   ALL TIMES SGT (GMT+8)',
              m, ph - m + 1, {size:6, color:RGB.mute, charSpace:0.4});
     });
+  }
 
-    return P.blob();
+  /* ---------- PNG renderer ----------
+     Same primitives as the PDF writer, drawn to a canvas at high resolution
+     so the shared image stays crisp instead of looking like a screenshot.   */
+  function CanvasSheet(scale){
+    var S = scale || 8;                 // pixels per millimetre
+    var FACE = 'Helvetica, Arial, "Liberation Sans", sans-serif';
+    var cv = null, ctx = null, pageCount = 0;
+
+    function px(mm){ return mm * S; }
+    function ptPx(pt){ return pt * 0.352778 * S; }
+    function css(c){ return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
+    function setFont(o){
+      ctx.font = (o.bold ? 'bold ' : '') + ptPx(o.size || 10).toFixed(2) + 'px ' + FACE;
+    }
+    function live(){ return ctx && pageCount === 1; }
+
+    var api = {
+      page: function(w, h){
+        pageCount++;
+        if (pageCount > 1) return api;          // PNG export keeps the first page only
+        cv = document.createElement('canvas');
+        cv.width  = Math.round(w * S);
+        cv.height = Math.round(h * S);
+        ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.textBaseline = 'alphabetic';
+        return api;
+      },
+      width: function(t, o){
+        o = o || {};
+        if (!ctx) return 0;
+        setFont(o);
+        var w = ctx.measureText(String(t)).width;
+        if (o.charSpace) w += ptPx(o.charSpace) * String(t).length;
+        return w / S;                            // mm
+      },
+      rect: function(x, y, w, h, o){
+        if (!live()) return;
+        o = o || {};
+        if (o.fill){ ctx.fillStyle = css(o.fill); ctx.fillRect(px(x), px(y), px(w), px(h)); }
+        if (o.stroke){
+          ctx.strokeStyle = css(o.stroke);
+          ctx.lineWidth = Math.max(1, px(o.lw || 0.25));
+          ctx.strokeRect(px(x), px(y), px(w), px(h));
+        }
+      },
+      circle: function(cx, cy, r, o){
+        if (!live()) return;
+        ctx.fillStyle = css(o.fill);
+        ctx.beginPath();
+        ctx.arc(px(cx), px(cy), px(r), 0, Math.PI * 2);
+        ctx.fill();
+      },
+      text: function(t, x, y, o){
+        if (!live()) return;
+        o = o || {};
+        t = String(t);
+        setFont(o);
+        ctx.fillStyle = css(o.color || [0,0,0]);
+        var w = api.width(t, o);
+        if (o.align === 'right') x -= w;
+        else if (o.align === 'center') x -= w / 2;
+
+        if (o.charSpace){                        // draw per glyph to emulate tracking
+          var adv = px(x), gap = ptPx(o.charSpace);
+          for (var i = 0; i < t.length; i++){
+            ctx.fillText(t[i], adv, px(y));
+            adv += ctx.measureText(t[i]).width + gap;
+          }
+        } else {
+          ctx.fillText(t, px(x), px(y));
+        }
+      },
+      wrap: function(t, maxW, o){
+        var words = String(t).split(/\s+/), lines = [], line = '';
+        words.forEach(function(word){
+          var probe = line ? line + ' ' + word : word;
+          if (api.width(probe, o) > maxW && line){ lines.push(line); line = word; }
+          else line = probe;
+        });
+        if (line) lines.push(line);
+        return lines;
+      },
+      image: function(){ /* charts get their own PDF pages, not the PNG */ },
+      toBlob: function(){
+        return new Promise(function(res, rej){
+          if (!cv) return rej(new Error('nothing drawn'));
+          if (cv.toBlob) cv.toBlob(function(b){ b ? res(b) : rej(new Error('encode failed')); }, 'image/png');
+          else {
+            var d = cv.toDataURL('image/png').split(',')[1], raw = atob(d);
+            var u = new Uint8Array(raw.length);
+            for (var i = 0; i < raw.length; i++) u[i] = raw.charCodeAt(i);
+            res(new Blob([u], {type:'image/png'}));
+          }
+        });
+      }
+    };
+    return api;
   }
 
   /* ---------- chart attachments ----------
@@ -1209,20 +1313,26 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
     });
   });
 
-  function fileName(){
+  function fileName(ext){
     var pair = (state.notes.fPair || 'XAUUSD').toUpperCase().replace(/[^A-Z0-9]/g, '');
     var d = state.notes.fDate ||
             new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Singapore'}).format(new Date());
-    return 'QuarterlyTheory_' + pair + '_' + d + '.pdf';
+    return 'QuarterlyTheory_' + pair + '_' + d + '.' + (ext || 'pdf');
+  }
+
+  function saveBlob(blob, name){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   }
 
   function downloadPDF(){
     try {
-      var url = URL.createObjectURL(buildSheet());
-      var a = document.createElement('a');
-      a.href = url; a.download = fileName();
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      var P = PDFSheet();
+      drawSheet(P, true);
+      saveBlob(P.blob(), fileName('pdf'));
       toast('PDF downloaded');
     } catch (e){
       toast('Could not build the PDF');
@@ -1231,6 +1341,30 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--rule);
   ['bPrint','bPrint2'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', downloadPDF);
+  });
+
+  function downloadPNG(btn){
+    var orig = btn ? btn.textContent : '';
+    if (btn){ btn.disabled = true; btn.textContent = 'Rendering...'; }
+    try {
+      var C = CanvasSheet(8);              // A4 at ~200 dpi -> 1680 x 2376 px
+      drawSheet(C, false);
+      C.toBlob().then(function(b){
+        saveBlob(b, fileName('png'));
+        toast('Image downloaded');
+      }).catch(function(){
+        toast('Could not build the image');
+      }).then(function(){
+        if (btn){ btn.disabled = false; btn.textContent = orig; }
+      });
+    } catch (e){
+      toast('Could not build the image');
+      if (btn){ btn.disabled = false; btn.textContent = orig; }
+    }
+  }
+  ['bImg','bImg2'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function(){ downloadPNG(el); });
   });
 
   var modal = document.getElementById('modal');
